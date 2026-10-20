@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maquette – Ticketing</title>
+  <link rel="stylesheet" href="/vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="bg-body-tertiary">
+  <nav class="navbar navbar-expand bg-dark" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><i class="bi bi-ticket-detailed me-2"></i>Ticketing</a>
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link active" href="#liste"><i class="bi bi-list-ul me-1"></i>Tickets</a></li>
+        <li class="nav-item"><a class="nav-link" href="#nouveau"><i class="bi bi-plus-circle me-1"></i>Nouveau ticket</a></li>
+      </ul>
+      <span class="navbar-text small"><i class="bi bi-person-circle me-1"></i>Administrateur Atelier</span>
+    </div>
+  </nav>
+
+  <main class="container-fluid py-4">
+
+    <!-- ===================== Écran 1 : liste ===================== -->
+    <section id="liste" class="mb-5">
+      <div class="d-flex align-items-center mb-2">
+        <h2 class="h5 mb-0">Écran 1 – Liste des tickets <code class="ms-2">#/</code></h2>
+        <span class="badge text-bg-primary ms-2">existant, à modifier</span>
+        <span class="badge text-bg-light border ms-1">F2</span>
+        <span class="badge text-bg-light border ms-1">F3</span>
+      </div>
+      <p class="text-secondary small">Ajouts : barre de filtres, colonne « Échéance », badge « En retard », bouton « Nouveau ticket ».</p>
+
+      <div class="border rounded bg-white p-3 shadow-sm">
+        <div class="d-flex align-items-center mb-3">
+          <h1 class="h4 mb-0">Tickets</h1>
+          <span class="badge text-bg-secondary ms-2">4</span>
+          <a href="#nouveau" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg me-1"></i>Nouveau ticket</a>
+        </div>
+
+        <!-- Barre de filtres (F2 + filtre retard F3) -->
+        <div class="card card-body bg-body-tertiary mb-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Recherche</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Rechercher dans le résumé…" value="imprimante">
+              </div>
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small mb-1">Projet</label>
+              <select class="form-select form-select-sm">
+                <option>Tous les projets</option>
+                <option>Support poste de travail</option>
+                <option>Applications métier</option>
+                <option>Réseau et télécoms</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small mb-1">Statut</label>
+              <select class="form-select form-select-sm">
+                <option>Tous les statuts</option>
+                <option>Nouveau</option>
+                <option>Affecté</option>
+                <option>Résolu</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="retard">
+                <label class="form-check-label small" for="retard">En retard seulement</label>
+              </div>
+            </div>
+            <div class="col-6 col-md-2 text-md-end">
+              <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-circle me-1"></i>Réinitialiser</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover table-tickets mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>N°</th><th>Résumé</th><th>Projet</th><th>Statut</th>
+                <th>Priorité</th><th>Échéance</th><th>Responsable</th><th>Mis à jour</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-secondary">#4</td>
+                <td>Écran noir au démarrage du poste</td>
+                <td class="small">Support poste de travail<div class="text-secondary">Matériel</div></td>
+                <td><span class="badge badge-statut" style="background:#fcbdbd">Nouveau</span></td>
+                <td class="priorite-60">Urgente</td>
+                <td class="small">
+                  <span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>En retard</span>
+                  <div class="text-secondary">20/10/2026 09:00</div>
+                </td>
+                <td>—</td>
+                <td class="small text-secondary">il y a 2 h</td>
+              </tr>
+              <tr>
+                <td class="text-secondary">#6</td>
+                <td>Imprimante du 2e étage hors ligne</td>
+                <td class="small">Support poste de travail<div class="text-secondary">Matériel</div></td>
+                <td><span class="badge badge-statut" style="background:#c2dfff">Affecté</span></td>
+                <td class="priorite-50">Élevée</td>
+                <td class="small">
+                  <span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>En retard</span>
+                  <div class="text-secondary">19/10/2026 16:30</div>
+                </td>
+                <td>Alex Bernard</td>
+                <td class="small text-secondary">il y a 1 j</td>
+              </tr>
+              <tr>
+                <td class="text-secondary">#13</td>
+                <td>Imprimante de l'accueil : bourrage papier répété</td>
+                <td class="small">Support poste de travail<div class="text-secondary">Matériel</div></td>
+                <td><span class="badge badge-statut" style="background:#ffcd85">Accepté</span></td>
+                <td>Normale</td>
+                <td class="small">23/10/2026 14:00</td>
+                <td>Camille Martin</td>
+                <td class="small text-secondary">il y a 3 h</td>
+              </tr>
+              <tr>
+                <td class="text-secondary">#9</td>
+                <td>Pilote d'imprimante manquant sur le nouveau poste</td>
+                <td class="small">Support poste de travail<div class="text-secondary">Logiciel</div></td>
+                <td><span class="badge badge-statut" style="background:#d2f5b0">Résolu</span></td>
+                <td>Basse</td>
+                <td class="small text-secondary">27/10/2026 10:00</td>
+                <td>Alex Bernard</td>
+                <td class="small text-secondary">il y a 2 j</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small text-secondary mt-2 mb-0">
+          <i class="bi bi-info-circle me-1"></i>Données : <code>GET /api/tickets?q=&amp;project_id=&amp;status=&amp;overdue=1</code>
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================== Écran 2 : formulaire ===================== -->
+    <section id="nouveau" class="mb-5">
+      <div class="d-flex align-items-center mb-2">
+        <h2 class="h5 mb-0">Écran 2 – Nouveau ticket <code class="ms-2">#/nouveau</code></h2>
+        <span class="badge text-bg-success ms-2">nouveau</span>
+        <span class="badge text-bg-light border ms-1">F1</span>
+        <span class="badge text-bg-light border ms-1">F3</span>
+      </div>
+      <p class="text-secondary small">Formulaire de déclaration d'incident. L'échéance est indiquée d'après la priorité choisie.</p>
+
+      <div class="border rounded bg-white p-3 shadow-sm">
+        <h1 class="h4 mb-3">Déclarer un incident</h1>
+
+        <div class="alert alert-danger py-2">
+          <i class="bi bi-exclamation-circle me-1"></i>La description est obligatoire.
+        </div>
+
+        <form class="row g-3" onsubmit="return false">
+          <div class="col-md-6">
+            <label class="form-label">Projet <span class="text-danger">*</span></label>
+            <select class="form-select">
+              <option>Choisir un projet…</option>
+              <option selected>Support poste de travail</option>
+              <option>Applications métier</option>
+              <option>Réseau et télécoms</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Catégorie</label>
+            <select class="form-select">
+              <option>Aucune</option>
+              <option selected>Matériel</option>
+              <option>Logiciel</option>
+              <option>Compte et accès</option>
+            </select>
+            <div class="form-text">Les catégories dépendent du projet choisi.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Priorité</label>
+            <select class="form-select">
+              <option>Basse</option>
+              <option>Normale</option>
+              <option>Élevée</option>
+              <option selected>Urgente</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Échéance prévue</label>
+            <div class="form-control bg-body-tertiary"><i class="bi bi-clock me-1"></i>Aujourd'hui, 14:30 (4 h)</div>
+            <div class="form-text">Urgente : 4 h · Élevée : 1 jour · Normale : 3 jours · Basse : 7 jours.</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Résumé <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" maxlength="128" value="Écran noir au démarrage du poste">
+            <div class="form-text text-end">32 / 128</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description <span class="text-danger">*</span></label>
+            <textarea class="form-control is-invalid" rows="4" placeholder="Décrivez le problème, depuis quand, ce que vous avez essayé…"></textarea>
+            <div class="invalid-feedback">La description est obligatoire.</div>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-primary"><i class="bi bi-send me-1"></i>Créer le ticket</button>
+            <a href="#liste" class="btn btn-outline-secondary">Annuler</a>
+          </div>
+        </form>
+        <p class="small text-secondary mt-3 mb-0">
+          <i class="bi bi-info-circle me-1"></i>Données : <code>GET /api/meta</code> (projets, catégories, priorités) · envoi : <code>POST /api/tickets</code>.
+          Après création, retour à la liste : le ticket apparaît en tête, statut « Nouveau ».
+        </p>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
