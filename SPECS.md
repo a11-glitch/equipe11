@@ -16,9 +16,9 @@ Les utilisateurs qui déclarent un incident ont besoin d'un outil simple pour cr
 ### F2 – Filtres et recherche
 - Besoin : retrouver rapidement un ticket dans la liste.
 - Critères d'acceptation :
-  - [ ] Une zone de recherche filtre la liste sur le résumé.
-  - [ ] Des listes déroulantes filtrent par projet et par statut.
-  - [ ] Un bouton « Réinitialiser » rétablit la liste complète.
+  - [x] Une zone de recherche filtre la liste sur le résumé.
+  - [x] Des listes déroulantes filtrent par projet et par statut.
+  - [x] Un bouton « Réinitialiser » rétablit la liste complète.
 - API : API existante, `GET /api/tickets` (paramètres `q`, `project_id`, `status`).
 
 ### F3 – Échéances et retards (SLA)

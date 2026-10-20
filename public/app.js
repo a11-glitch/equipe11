@@ -6,7 +6,7 @@
  * Pour ajouter un écran : créer un composant, puis l'ajouter à ROUTES et, si besoin, à MENU.
  */
 
-const { createApp, reactive, ref, computed, onMounted } = Vue;
+const { createApp, reactive, ref, computed, onMounted, watch } = Vue;
 
 // ---------------------------------------------------------------------------
 // API
@@ -63,18 +63,44 @@ const ListeTickets = {
     const tickets = ref([]);
     const chargement = ref(true);
     const erreur = ref('');
+    const filtres = reactive({ q: '', project_id: '', status: '' });
+    let minuteur = null;
 
-    onMounted(async () => {
+    async function charger() {
+      const parametres = new URLSearchParams();
+      for (const [cle, valeur] of Object.entries(filtres)) {
+        if (valeur !== '') parametres.set(cle, valeur);
+      }
+      const texte = parametres.toString();
       try {
-        tickets.value = await api('GET', '/api/tickets');
+        tickets.value = await api('GET', '/api/tickets' + (texte ? '?' + texte : ''));
+        erreur.value = '';
       } catch (e) {
         erreur.value = e.message;
       } finally {
         chargement.value = false;
       }
-    });
+    }
 
-    return { tickets, chargement, erreur, ...outils };
+    // La recherche attend la fin de la saisie ; les listes déroulantes agissent tout de suite.
+    watch(() => filtres.q, () => {
+      clearTimeout(minuteur);
+      minuteur = setTimeout(charger, 300);
+    });
+    watch(() => [filtres.project_id, filtres.status], charger);
+
+    function reinitialiser() {
+      filtres.q = '';
+      filtres.project_id = '';
+      filtres.status = '';
+    }
+
+    onMounted(charger);
+
+    return {
+      tickets, chargement, erreur, filtres, reinitialiser,
+      meta: computed(() => etat.meta), ...outils,
+    };
   },
   template: `
     <div class="d-flex align-items-center mb-3">
@@ -82,8 +108,39 @@ const ListeTickets = {
       <span class="badge text-bg-secondary ms-2">{{ tickets.length }}</span>
       <a href="#/nouveau" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg me-1"></i>Nouveau ticket</a>
     </div>
+    <div class="card card-body bg-body-tertiary mb-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+          <label class="form-label small mb-1" for="filtre-q">Recherche</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="filtre-q" type="search" class="form-control" placeholder="Rechercher dans le résumé…" v-model="filtres.q">
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small mb-1" for="filtre-projet">Projet</label>
+          <select id="filtre-projet" class="form-select form-select-sm" v-model="filtres.project_id">
+            <option value="">Tous les projets</option>
+            <option v-for="p in meta.projects" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small mb-1" for="filtre-statut">Statut</label>
+          <select id="filtre-statut" class="form-select form-select-sm" v-model="filtres.status">
+            <option value="">Tous les statuts</option>
+            <option v-for="s in meta.enums.status" :key="s.id" :value="s.id">{{ s.label }}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2 text-md-end">
+          <button type="button" class="btn btn-outline-secondary btn-sm" @click="reinitialiser">
+            <i class="bi bi-x-circle me-1"></i>Réinitialiser
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="erreur" class="alert alert-danger">{{ erreur }}</div>
     <div v-else-if="chargement" class="text-secondary">Chargement…</div>
+    <div v-else-if="!tickets.length" class="text-secondary text-center py-4">Aucun ticket ne correspond.</div>
     <div v-else class="card shadow-sm">
       <div class="table-responsive">
         <table class="table table-hover table-tickets mb-0">
