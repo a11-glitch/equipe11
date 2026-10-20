@@ -72,6 +72,31 @@ verifie('affectation : statut « Affecté »', ($r['body']['status'] ?? 0) === S
 $r = api_handle('PATCH', "/api/tickets/$id", [], ['status' => STATUS_RESOLVED]);
 verifie('résolution : « Corrigé »', ($r['body']['resolution'] ?? 0) === RESOLUTION_FIXED, $r);
 
+// SLA : échéance par défaut selon la priorité, échéance fournie respectée, filtre « en retard »
+$delaisAttendus = [20 => 7 * 86400, 30 => 3 * 86400, 40 => 86400, 50 => 4 * 3600, 60 => 3600];
+foreach ($delaisAttendus as $priorite => $delai) {
+    $r = api_handle('POST', '/api/tickets', [], [
+        'project_id' => 1, 'summary' => "SLA $priorite", 'description' => 'Test SLA', 'priority' => $priorite,
+    ]);
+    $ecart = ($r['body']['due_date'] ?? 0) - ($r['body']['date_submitted'] ?? 0);
+    verifie("SLA : échéance par défaut priorité $priorite", $r['status'] === 201 && $ecart === $delai, $r);
+    api_handle('DELETE', '/api/tickets/' . ($r['body']['id'] ?? 0));
+}
+$r = api_handle('POST', '/api/tickets', [], [
+    'project_id' => 1, 'summary' => 'SLA fournie', 'description' => 'Test SLA', 'priority' => 50, 'due_date' => 1234567890,
+]);
+verifie('SLA : échéance fournie conservée', ($r['body']['due_date'] ?? 0) === 1234567890, $r);
+$idRetard = $r['body']['id'] ?? 0;
+$r = api_handle('GET', '/api/tickets', ['overdue' => '1']);
+$ids = array_column($r['body'], 'id');
+verifie('retard : le ticket en retard est listé', in_array($idRetard, $ids, true), $ids);
+verifie('retard : seulement échéance dépassée et non résolu',
+    $r['body'] !== [] && count(array_filter($r['body'], fn($t) => $t['due_date'] === null || $t['due_date'] >= time() || $t['status'] >= STATUS_RESOLVED)) === 0, $r['body']);
+api_handle('PATCH', "/api/tickets/$idRetard", [], ['status' => STATUS_RESOLVED]);
+$r = api_handle('GET', '/api/tickets', ['overdue' => '1']);
+verifie('retard : un ticket résolu n\'est plus en retard', !in_array($idRetard, array_column($r['body'], 'id'), true));
+api_handle('DELETE', "/api/tickets/$idRetard");
+
 // Valeur invalide
 $r = api_handle('PATCH', "/api/tickets/$id", [], ['priority' => 999]);
 verifie('priorité invalide (422)', $r['status'] === 422, $r);

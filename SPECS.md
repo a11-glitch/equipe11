@@ -24,9 +24,9 @@ Les utilisateurs qui déclarent un incident ont besoin d'un outil simple pour cr
 ### F3 – Échéances et retards (SLA)
 - Besoin : voir l'échéance de chaque ticket et repérer ceux en retard.
 - Critères d'acceptation :
-  - [ ] Un ticket créé reçoit une échéance selon sa priorité (Urgente : 4 h, Élevée : 1 jour, Normale : 3 jours, Basse : 7 jours).
-  - [ ] La liste affiche l'échéance, et un badge rouge « En retard » apparaît pour les tickets non résolus dont l'échéance est dépassée.
-  - [ ] Un filtre « En retard » n'affiche que ces tickets.
+  - [x] Un ticket créé reçoit une échéance selon sa priorité (Urgente : 4 h, Élevée : 1 jour, Normale : 3 jours, Basse : 7 jours).
+  - [x] La liste affiche l'échéance, et un badge rouge « En retard » apparaît pour les tickets non résolus dont l'échéance est dépassée.
+  - [x] Un filtre « En retard » n'affiche que ces tickets.
 - API : modification minimale.
   - `ticket_create` calcule `due_date` selon la priorité quand il n'est pas fourni (le champ `due_date` existe déjà).
   - `GET /api/tickets` : nouveau filtre `overdue=1` (`due_date < maintenant` et `status < STATUS_RESOLVED`).

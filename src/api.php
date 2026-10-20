@@ -3,7 +3,7 @@
  * API JSON Mantis-lite.
  *
  *   GET    /api/meta                    listes de valeurs, projets, catégories, utilisateurs
- *   GET    /api/tickets                 liste (filtres : project_id, status, handler_id, q)
+ *   GET    /api/tickets                 liste (filtres : project_id, status, handler_id, overdue=1, q)
  *   POST   /api/tickets                 création
  *   GET    /api/tickets/{id}            fiche complète (texte, notes, historique)
  *   PATCH  /api/tickets/{id}            modification partielle
@@ -110,6 +110,21 @@ const TICKET_SELECT = <<<SQL
 const TICKET_INT_FIELDS = ['id', 'project_id', 'category_id', 'reporter_id', 'handler_id', 'priority',
     'severity', 'reproducibility', 'status', 'resolution', 'date_submitted', 'last_updated', 'due_date'];
 
+/** Délai cible (en secondes) avant l'échéance d'un ticket, selon sa priorité. */
+const SLA_DELAIS = [
+    20 => 7 * 86400,  // Basse
+    30 => 3 * 86400,  // Normale
+    40 => 86400,      // Élevée
+    50 => 4 * 3600,   // Urgente
+    60 => 3600,       // Immédiate
+];
+
+/** Échéance par défaut d'un ticket créé à $now ; null pour une priorité sans délai (« Aucune »). */
+function sla_echeance(int $priority, int $now): ?int
+{
+    return isset(SLA_DELAIS[$priority]) ? $now + SLA_DELAIS[$priority] : null;
+}
+
 /** Convertit en entiers les colonnes numériques (SQLite renvoie parfois des chaînes). */
 function ticket_cast(array $row): array
 {
@@ -121,7 +136,8 @@ function ticket_cast(array $row): array
     return $row;
 }
 
-/** Filtres : project_id, status (liste séparée par des virgules), handler_id ("none" = non affecté), q (texte). */
+/** Filtres : project_id, status (liste séparée par des virgules), handler_id ("none" = non affecté),
+ *  overdue ("1" = échéance dépassée et ticket non résolu), q (texte). */
 function ticket_list(array $query): array
 {
     $where = [];
@@ -143,6 +159,10 @@ function ticket_list(array $query): array
             $where[] = 'b.handler_id = ?';
             $params[] = (int) $query['handler_id'];
         }
+    }
+    if (isset($query['overdue']) && $query['overdue'] === '1') {
+        $where[] = 'b.due_date IS NOT NULL AND b.due_date < ? AND b.status < ?';
+        array_push($params, time(), STATUS_RESOLVED);
     }
     if (isset($query['q']) && trim((string) $query['q']) !== '') {
         $where[] = 'b.summary LIKE ?';
@@ -192,6 +212,10 @@ function ticket_create(array $in, int $userId): array
     // Règle MantisBT : un ticket créé avec un responsable passe au statut « Affecté ».
     $status = !empty($data['handler_id']) ? STATUS_ASSIGNED : STATUS_NEW;
 
+    // Règle SLA : sans échéance fournie, elle découle de la priorité.
+    $priority = $data['priority'] ?? 30;
+    $dueDate = array_key_exists('due_date', $data) ? $data['due_date'] : sla_echeance($priority, $now);
+
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -205,8 +229,8 @@ function ticket_create(array $in, int $userId): array
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['project_id'], $userId, $data['handler_id'] ?? null, $data['category_id'] ?? null,
-                $data['priority'] ?? 30, $data['severity'] ?? 50, $data['reproducibility'] ?? 70,
-                $status, RESOLUTION_OPEN, $data['summary'], $textId, $now, $now, $data['due_date'] ?? null,
+                $priority, $data['severity'] ?? 50, $data['reproducibility'] ?? 70,
+                $status, RESOLUTION_OPEN, $data['summary'], $textId, $now, $now, $dueDate,
             ]
         );
         history_add($id, $userId, '', '', '', HISTORY_NEW_BUG);

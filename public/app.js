@@ -45,6 +45,10 @@ const outils = {
   dateHeure(ts) {
     return ts ? new Date(ts * 1000).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
   },
+  // Un ticket est en retard si son échéance est dépassée et qu'il n'est pas résolu (statut < 80).
+  enRetard(t) {
+    return t.due_date !== null && t.due_date < Date.now() / 1000 && t.status < 80;
+  },
   depuis(ts) {
     const secondes = Math.floor(Date.now() / 1000) - ts;
     if (secondes < 3600) return `il y a ${Math.max(1, Math.floor(secondes / 60))} min`;
@@ -63,7 +67,7 @@ const ListeTickets = {
     const tickets = ref([]);
     const chargement = ref(true);
     const erreur = ref('');
-    const filtres = reactive({ q: '', project_id: '', status: '' });
+    const filtres = reactive({ q: '', project_id: '', status: '', overdue: '' });
     let minuteur = null;
 
     async function charger() {
@@ -87,12 +91,13 @@ const ListeTickets = {
       clearTimeout(minuteur);
       minuteur = setTimeout(charger, 300);
     });
-    watch(() => [filtres.project_id, filtres.status], charger);
+    watch(() => [filtres.project_id, filtres.status, filtres.overdue], charger);
 
     function reinitialiser() {
       filtres.q = '';
       filtres.project_id = '';
       filtres.status = '';
+      filtres.overdue = '';
     }
 
     onMounted(charger);
@@ -131,7 +136,14 @@ const ListeTickets = {
             <option v-for="s in meta.enums.status" :key="s.id" :value="s.id">{{ s.label }}</option>
           </select>
         </div>
-        <div class="col-12 col-md-2 text-md-end">
+        <div class="col-6 col-md-2">
+          <div class="form-check form-switch">
+            <input id="filtre-retard" class="form-check-input" type="checkbox" role="switch"
+              v-model="filtres.overdue" true-value="1" false-value="">
+            <label class="form-check-label small" for="filtre-retard">En retard seulement</label>
+          </div>
+        </div>
+        <div class="col-6 col-md-12 text-md-end">
           <button type="button" class="btn btn-outline-secondary btn-sm" @click="reinitialiser">
             <i class="bi bi-x-circle me-1"></i>Réinitialiser
           </button>
@@ -147,7 +159,7 @@ const ListeTickets = {
           <thead class="table-light">
             <tr>
               <th>N°</th><th>Résumé</th><th>Projet</th><th>Statut</th>
-              <th>Priorité</th><th>Responsable</th><th>Mis à jour</th>
+              <th>Priorité</th><th>Échéance</th><th>Responsable</th><th>Mis à jour</th>
             </tr>
           </thead>
           <tbody>
@@ -161,6 +173,12 @@ const ListeTickets = {
                 </span>
               </td>
               <td :class="'priorite-' + t.priority">{{ libelle('priority', t.priority) }}</td>
+              <td class="small">
+                <span v-if="enRetard(t)" class="badge text-bg-danger">
+                  <i class="bi bi-exclamation-triangle me-1"></i>En retard
+                </span>
+                <div :class="enRetard(t) ? 'text-secondary' : ''">{{ dateHeure(t.due_date) }}</div>
+              </td>
               <td>{{ t.handler || '—' }}</td>
               <td class="small text-secondary" :title="dateHeure(t.last_updated)">{{ depuis(t.last_updated) }}</td>
             </tr>
@@ -183,6 +201,16 @@ const NouveauTicket = {
     const categories = computed(() =>
       etat.meta.categories.filter((c) => c.project_id === Number(formulaire.project_id)));
     const priorites = computed(() => etat.meta.enums.priority.filter((p) => p.id >= 20));
+
+    // Indication seulement : l'échéance réelle est fixée par le serveur (SLA_DELAIS dans src/api.php).
+    const DELAIS = {
+      20: [7 * 86400, '7 jours'], 30: [3 * 86400, '3 jours'], 40: [86400, '1 jour'],
+      50: [4 * 3600, '4 h'], 60: [3600, '1 h'],
+    };
+    const echeance = computed(() => {
+      const d = DELAIS[Number(formulaire.priority)];
+      return d ? `${outils.dateHeure(Math.floor(Date.now() / 1000) + d[0])} (${d[1]})` : '—';
+    });
 
     function changerProjet() {
       formulaire.category_id = '';
@@ -207,7 +235,7 @@ const NouveauTicket = {
       }
     }
 
-    return { formulaire, erreur, envoi, categories, priorites, meta: computed(() => etat.meta), changerProjet, envoyer };
+    return { formulaire, erreur, envoi, categories, priorites, echeance, meta: computed(() => etat.meta), changerProjet, envoyer };
   },
   template: `
     <h1 class="h4 mb-3">Déclarer un incident</h1>
@@ -237,6 +265,11 @@ const NouveauTicket = {
             <select id="f-priorite" class="form-select" v-model="formulaire.priority">
               <option v-for="p in priorites" :key="p.id" :value="p.id">{{ p.label }}</option>
             </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Échéance prévue</label>
+            <div class="form-control bg-body-tertiary"><i class="bi bi-clock me-1"></i>{{ echeance }}</div>
+            <div class="form-text">Urgente : 4 h · Élevée : 1 jour · Normale : 3 jours · Basse : 7 jours.</div>
           </div>
           <div class="col-12">
             <label class="form-label" for="f-resume">Résumé <span class="text-danger">*</span></label>
