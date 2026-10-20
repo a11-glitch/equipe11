@@ -87,6 +87,12 @@ $r = api_handle('POST', '/api/tickets', [], [
 ]);
 verifie('SLA : échéance fournie conservée', ($r['body']['due_date'] ?? 0) === 1234567890, $r);
 $idRetard = $r['body']['id'] ?? 0;
+foreach (['abc', -5, 12.5, [1]] as $mauvaise) {
+    $r = api_handle('POST', '/api/tickets', [], [
+        'project_id' => 1, 'summary' => 'SLA invalide', 'description' => 'Test SLA', 'due_date' => $mauvaise,
+    ]);
+    verifie('SLA : échéance invalide refusée (422) : ' . json_encode($mauvaise), $r['status'] === 422, $r);
+}
 $r = api_handle('GET', '/api/tickets', ['overdue' => '1']);
 $ids = array_column($r['body'], 'id');
 verifie('retard : le ticket en retard est listé', in_array($idRetard, $ids, true), $ids);
